@@ -31,6 +31,7 @@ require_once( PMPRO_DIR . '/includes/sessions.php' );				// start/close PHP sees
 require_once( PMPRO_DIR . '/includes/localization.php' );			// localization functions
 require_once( PMPRO_DIR . '/includes/lib/name-parser.php' );		// parses "Jason Coleman" into firstname=>Jason, lastname=>Coleman
 require_once( PMPRO_DIR . '/includes/functions.php' );				// misc functions used by the plugin
+require_once( PMPRO_DIR . '/includes/adminassist.php' );				// misc functions used by the plugin
 require_once( PMPRO_DIR . '/includes/updates.php' );				// database and other updates
 require_once( PMPRO_DIR . '/includes/upgradecheck.php' );			// database and other updates
 

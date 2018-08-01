@@ -32,6 +32,8 @@ function pmpro_shortcode_account($atts, $content=null, $code="")
 		$mylevels = pmpro_getMembershipLevelsForUser();
 		$pmpro_levels = pmpro_getAllLevels(false, true); // just to be sure - include only the ones that allow signups
 		$invoices = $wpdb->get_results("SELECT *, UNIX_TIMESTAMP(timestamp) as timestamp FROM $wpdb->pmpro_membership_orders WHERE user_id = '$current_user->ID' AND status NOT IN('refunded', 'review', 'token', 'error') ORDER BY timestamp DESC LIMIT 6");
+
+		$invoices = apply_filters('pmpro_account_invoices_array', $invoices );
 		?>	
 	<div id="pmpro_account">		
 		<?php if(in_array('membership', $sections) || in_array('memberships', $sections)) { ?>
@@ -137,11 +139,16 @@ function pmpro_shortcode_account($atts, $content=null, $code="")
 						if($count++ > 4)
 							break;
 
-						//get an member order object
-						$invoice_id = $invoice->id;
-						$invoice = new MemberOrder;
-						$invoice->getMemberOrderByID($invoice_id);
-						$invoice->getMembershipLevel();						
+						// Temp orders have a 'test' object that is set to true. If not set, get normal orders.
+						if ( empty( $invoice->test ) ) {
+							$invoice_id = $invoice->id;
+							$invoice = new MemberOrder;
+							$invoice->getMemberOrderByID($invoice_id);
+							$invoice->getMembershipLevel();
+						} else {
+							$invoice->getMembershipLevel();
+						}
+											
 						?>
 						<tr id="pmpro_account-invoice-<?php echo $invoice->code; ?>">
 							<td><a href="<?php echo pmpro_url("invoice", "?invoice=" . $invoice->code)?>"><?php echo date_i18n(get_option("date_format"), $invoice->timestamp)?></td>

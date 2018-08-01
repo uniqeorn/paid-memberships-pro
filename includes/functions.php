@@ -2619,3 +2619,27 @@ function pmpro_cleanup_memberships_users_table() {
 				SET status = 'inactive'";
 	$wpdb->query( $sqlQuery );
 }
+
+/**
+ * Checks if a PMPro page preheader has been loaded.
+ */
+function pmpro_has_loaded_page( $pages = NULL ) {
+	$included_files = get_included_files();
+
+	if( empty( $pages ) ) {
+		$pages = array( 'account', 'billing', 'checkout', 'confirmation', 'invoice', 'levels' );
+	}
+
+	if( !is_array( $pages ) ) {
+		$pages = array( $pages );
+	}
+
+	foreach( $pages as $page ) {
+		$filename = PMPRO_DIR . '/preheaders/' . $page . '.php';
+		if( in_array( $filename, $included_files ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
