@@ -77,8 +77,7 @@
 			if(!$id)
 				return false;
 
-			$gmt_offset = get_option('gmt_offset');
-			$dbobj = $wpdb->get_row("SELECT *, UNIX_TIMESTAMP(timestamp) + " . ($gmt_offset * 3600) . "  as timestamp FROM $wpdb->pmpro_membership_orders WHERE id = '$id' LIMIT 1");
+			$dbobj = $wpdb->get_row("SELECT *, UNIX_TIMESTAMP(timestamp) as timestamp FROM $wpdb->pmpro_membership_orders WHERE id = '$id' LIMIT 1");
 
 			if($dbobj)
 			{
@@ -369,8 +368,7 @@
 			if(!empty($this->user))
 				return $this->user;
 
-			$gmt_offset = get_option('gmt_offset');
-			$this->user = $wpdb->get_row("SELECT *, UNIX_TIMESTAMP(user_registered) + " . ($gmt_offset * 3600) . "  as user_registered FROM $wpdb->users WHERE ID = '" . $this->user_id . "' LIMIT 1");
+			$this->user = $wpdb->get_row("SELECT *, UNIX_TIMESTAMP(user_registered) as user_registered FROM $wpdb->users WHERE ID = '" . $this->user_id . "' LIMIT 1");
 			return $this->user;
 		}
 
@@ -415,7 +413,7 @@
 			{
 				$this->membership_level = $wpdb->get_row("SELECT l.* FROM $wpdb->pmpro_membership_levels l WHERE l.id = '" . $this->membership_id . "' LIMIT 1");
 			}
-			
+
 			// Round prices to avoid extra decimals.
 			if( ! empty( $this->membership_level ) ) {
 				$this->membership_level->initial_payment = pmpro_round_price( $this->membership_level->initial_payment );
@@ -425,7 +423,7 @@
 
 			return $this->membership_level;
 		}
-		
+
 		/**
 		 * Get a membership level object at checkout
 		 * for the level associated with this order.
@@ -440,27 +438,27 @@
 			if( ! empty( $this->membership_level ) && empty( $force ) ) {
 				return $this->membership_level;
 			}
-			
+
 			// If for some reason, we haven't setup pmpro_level yet, do that.
 			if ( empty( $pmpro_level ) ) {
 				$pmpro_level = pmpro_getLevelAtCheckout();
 			}
-			
+
 			// Set the level to the checkout level global.
 			$this->membership_level = $pmpro_level;
-			
+
 			// Fix the membership level id.
 			if(!empty( $this->membership_level) && !empty($this->membership_level->level_id)) {
 				$this->membership_level->id = $this->membership_level->level_id;
 			}
-			
+
 			// Round prices to avoid extra decimals.
 			if( ! empty( $this->membership_level ) ) {
 				$this->membership_level->initial_payment = pmpro_round_price( $this->membership_level->initial_payment );
 				$this->membership_level->billing_amount = pmpro_round_price( $this->membership_level->billing_amount );
 				$this->membership_level->trial_amount = pmpro_round_price( $this->membership_level->trial_amount );
 			}
-			
+
 			return $this->membership_level;
 		}
 
@@ -574,8 +572,8 @@
 			else {
 				$total = (float)$amount + (float)$tax;
 				$this->total = $total;
-			}			
-			
+			}
+
 			//these fix some warnings/notices
 			if(empty($this->billing))
 			{
@@ -683,13 +681,13 @@
 				//set up actions
 				$before_action = "pmpro_add_order";
 				$after_action = "pmpro_added_order";
-				
+
 				//only on inserts, we might want to set the expirationmonth and expirationyear from ExpirationDate
 				if( (empty($this->expirationmonth) || empty($this->expirationyear)) && !empty($this->ExpirationDate)) {
 					$this->expirationmonth = substr($this->ExpirationDate, 0, 2);
 					$this->expirationyear = substr($this->ExpirationDate, 2, 4);
 				}
-				
+
 				//insert
 				$this->sqlQuery = "INSERT INTO $wpdb->pmpro_membership_orders
 								(`code`, `session_id`, `user_id`, `membership_id`, `paypal_token`, `billing_name`, `billing_street`, `billing_city`, `billing_state`, `billing_zip`, `billing_country`, `billing_phone`, `subtotal`, `tax`, `couponamount`, `certificate_id`, `certificateamount`, `total`, `payment_type`, `cardtype`, `accountnumber`, `expirationmonth`, `expirationyear`, `status`, `gateway`, `gateway_environment`, `payment_transaction_id`, `subscription_transaction_id`, `timestamp`, `affiliate_id`, `affiliate_subid`, `notes`, `checkout_id`)
@@ -809,7 +807,7 @@
 		 */
 		function cancel() {
 			global $wpdb;
-			
+
 			//only need to cancel on the gateway if there is a subscription id
 			if(empty($this->subscription_transaction_id)) {
 				//just mark as cancelled
@@ -821,24 +819,24 @@
 
 				//cancel orders for the same subscription
 				//Note: We do this early to avoid race conditions if and when the
-				//gateway send the cancel webhook after cancelling the subscription.				
+				//gateway send the cancel webhook after cancelling the subscription.
 				$sqlQuery = $wpdb->prepare(
-					"UPDATE $wpdb->pmpro_membership_orders 
-						SET `status` = 'cancelled' 
-						WHERE user_id = %d 
-							AND membership_id = %d 
-							AND gateway = %s 
-							AND gateway_environment = %s 
-							AND subscription_transaction_id = %s 
-							AND `status` IN('success', '') ",					
+					"UPDATE $wpdb->pmpro_membership_orders
+						SET `status` = 'cancelled'
+						WHERE user_id = %d
+							AND membership_id = %d
+							AND gateway = %s
+							AND gateway_environment = %s
+							AND subscription_transaction_id = %s
+							AND `status` IN('success', '') ",
 					$this->user_id,
 					$this->membership_id,
 					$this->gateway,
 					$this->gateway_environment,
 					$this->subscription_transaction_id
-				);								
+				);
 				$wpdb->query($sqlQuery);
-				
+
 				//cancel the gateway subscription first
 				if (is_object($this->Gateway)) {
 					$result = $this->Gateway->cancel( $this );
@@ -863,13 +861,13 @@
 				} else {
 					//Note: status would have been set to cancelled by the gateway class. So we don't have to update it here.
 
-					//remove billing numbers in pmpro_memberships_users if the membership is still active					
+					//remove billing numbers in pmpro_memberships_users if the membership is still active
 					$sqlQuery = "UPDATE $wpdb->pmpro_memberships_users SET initial_payment = 0, billing_amount = 0, cycle_number = 0 WHERE user_id = '" . $this->user_id . "' AND membership_id = '" . $this->membership_id . "' AND status = 'active'";
 					$wpdb->query($sqlQuery);
 				}
-				
-				
-				
+
+
+
 				return $result;
 			}
 		}
@@ -904,7 +902,7 @@
 			}
 		}
 
-		/** 
+		/**
 		 * Get TOS consent information.
 		 * @since  1.9.5
 		 */
